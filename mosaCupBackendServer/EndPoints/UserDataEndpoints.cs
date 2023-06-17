@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OpenApi;
 using mosaCupBackendServer.Data;
 using mosaCupBackendServer.Models.DbModels;
+using mosaCupBackendServer.Models.ReqModels;
 
 namespace mosaCupBackendServer.EndPoints;
 
@@ -30,21 +31,39 @@ public static class UserDataEndpoints
         .WithName("GetUserDataById")
         .WithOpenApi();
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound>> (string uid, UserData userData, mosaCupBackendServerContext db) =>
+        //Search user
+        group.MapGet("/search/{name}", async Task<Results<Ok<List<UserData>>, NotFound>> (string name, mosaCupBackendServerContext db) =>
+        {
+            if (!name.StartsWith("@"))
+            {
+                var userList = await db.UserData
+                    .Where(model => model.DisplayName.IndexOf(name) != -1)
+                    .ToListAsync();
+                return userList != null ? TypedResults.Ok(userList) : TypedResults.NotFound();
+            }
+            else
+            {
+                var userList = await db.UserData
+                    .Where(model => model.Name.IndexOf(name) != -1)
+                    .ToListAsync();
+                return userList != null ? TypedResults.Ok(userList) : TypedResults.NotFound();
+            }
+        })
+        .WithName("SearchUserAsName")
+        .WithOpenApi();
+
+        //Edit profile
+        group.MapPut("/EditProfile", async Task<Results<Ok, NotFound>> (EditProfile userData, mosaCupBackendServerContext db) =>
         {
             var affected = await db.UserData
-                .Where(model => model.Uid == uid)
+                .Where(model => model.Uid == userData.Uid)
                 .ExecuteUpdateAsync(setters => setters
-                  .SetProperty(m => m.Uid, userData.Uid)
                   .SetProperty(m => m.DisplayName, userData.DisplayName)
-                  .SetProperty(m => m.Name, userData.Name)
                   .SetProperty(m => m.Description, userData.Description)
-                  .SetProperty(m => m.DeletedAt, userData.DeletedAt)
                 );
-
             return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
         })
-        .WithName("UpdateUserData")
+        .WithName("EditProfile")
         .WithOpenApi();
 
         group.MapPost("/", async (UserData userData, mosaCupBackendServerContext db) =>
