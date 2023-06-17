@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OpenApi;
 using mosaCupBackendServer.Data;
 using mosaCupBackendServer.Models.DbModels;
+using mosaCupBackendServer.Models.ReqModels;
 namespace mosaCupBackendServer.EndPoints;
 
 public static class LikeEndpoints
@@ -11,41 +12,22 @@ public static class LikeEndpoints
     {
         var group = routes.MapGroup("/api/Like").WithTags(nameof(Like));
 
-        group.MapGet("/", async (mosaCupBackendServerContext db) =>
+        //Get Like User
+        group.MapGet("/{pid}", async Task<Results<Ok<List<Like>>, NotFound>> (Guid Pid, mosaCupBackendServerContext db) =>
         {
-            return await db.Like.ToListAsync();
-        })
-        .WithName("GetAllLikes")
-        .WithOpenApi();
+            var likeList = await db.Like
+                .Where(model => model.PostId == Pid)
+                .ToListAsync();
 
-        group.MapGet("/{id}", async Task<Results<Ok<Like>, NotFound>> (int id, mosaCupBackendServerContext db) =>
-        {
-            return await db.Like.AsNoTracking()
-                .FirstOrDefaultAsync(model => model.Id == id)
-                is Like model
-                    ? TypedResults.Ok(model)
-                    : TypedResults.NotFound();
+            return likeList != null ? TypedResults.Ok(likeList) : TypedResults.NotFound();
         })
         .WithName("GetLikeById")
         .WithOpenApi();
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound>> (int id, Like like, mosaCupBackendServerContext db) =>
+        //Like
+        group.MapPost("/", async (LikeReq reqData, mosaCupBackendServerContext db) =>
         {
-            var affected = await db.Like
-                .Where(model => model.Id == id)
-                .ExecuteUpdateAsync(setters => setters
-                  .SetProperty(m => m.Id, like.Id)
-                  .SetProperty(m => m.PostId, like.PostId)
-                  .SetProperty(m => m.Uid, like.Uid)
-                );
-
-            return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
-        })
-        .WithName("UpdateLike")
-        .WithOpenApi();
-
-        group.MapPost("/", async (Like like, mosaCupBackendServerContext db) =>
-        {
+            var like = new Like { Id = Guid.NewGuid(), PostId = reqData.PostId, Uid = reqData.Uid };
             db.Like.Add(like);
             await db.SaveChangesAsync();
             return TypedResults.Created($"/api/Like/{like.Id}",like);
@@ -53,12 +35,20 @@ public static class LikeEndpoints
         .WithName("CreateLike")
         .WithOpenApi();
 
-        group.MapDelete("/{id}", async Task<Results<Ok, NotFound>> (int id, mosaCupBackendServerContext db) =>
+        //Delete Like
+        group.MapPost("/Delete", async Task<Results<Ok, NotFound>> (LikeReq reqData, mosaCupBackendServerContext db) =>
         {
-            var affected = await db.Like
-                .Where(model => model.Id == id)
-                .ExecuteDeleteAsync();
+            var likeData = await db.Like
+                .FirstOrDefaultAsync(model => model.PostId == reqData.PostId && model.Uid == reqData.Uid);
+            if(likeData == null)
+            {
+                return TypedResults.NotFound();
+            }
 
+            var affected = await db.Like
+                .Where(model => model.Id == likeData.Id)
+                .ExecuteDeleteAsync();
+               
             return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
         })
         .WithName("DeleteLike")

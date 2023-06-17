@@ -13,17 +13,11 @@ public static class UserDataEndpoints
     {
         var group = routes.MapGroup("/api/UserData").WithTags(nameof(UserData));
 
-        group.MapGet("/", async (mosaCupBackendServerContext db) =>
-        {
-            return await db.UserData.ToListAsync();
-        })
-        .WithName("GetAllUserData")
-        .WithOpenApi();
-
+        //Load user info
         group.MapGet("/{id}", async Task<Results<Ok<UserData>, NotFound>> (string uid, mosaCupBackendServerContext db) =>
         {
             return await db.UserData.AsNoTracking()
-                .FirstOrDefaultAsync(model => model.Uid == uid)
+                .FirstOrDefaultAsync(model => model.DeletedAt == null && model.Uid == uid)
                 is UserData model
                     ? TypedResults.Ok(model)
                     : TypedResults.NotFound();
@@ -37,7 +31,7 @@ public static class UserDataEndpoints
             if (!name.StartsWith("@"))
             {
                 var userList = await db.UserData
-                    .Where(model => model.DisplayName.IndexOf(name) != -1)
+                    .Where(model => model.DeletedAt == null && model.DisplayName.IndexOf(name) != -1)
                     .ToListAsync();
                 return userList != null ? TypedResults.Ok(userList) : TypedResults.NotFound();
             }
@@ -51,6 +45,16 @@ public static class UserDataEndpoints
         })
         .WithName("SearchUserAsName")
         .WithOpenApi();
+
+        //Judge Name is Available (Available -> 1/ Not available -> 0)
+        group.MapGet("/JudgeAvailable/{name}", async Task<Results<Ok<int>, NotFound>> (string userName, mosaCupBackendServerContext db) =>
+        {
+            return await db.UserData
+                .FirstOrDefaultAsync(model => model.Name == userName) 
+                is UserData model
+                    ? TypedResults.Ok(0)
+                    : TypedResults.Ok(1);
+        });
 
         //Edit profile
         group.MapPut("/EditProfile", async Task<Results<Ok, NotFound>> (EditProfile userData, mosaCupBackendServerContext db) =>
@@ -66,24 +70,27 @@ public static class UserDataEndpoints
         .WithName("EditProfile")
         .WithOpenApi();
 
+        //Create user
         group.MapPost("/", async (UserData userData, mosaCupBackendServerContext db) =>
         {
             db.UserData.Add(userData);
             await db.SaveChangesAsync();
-            return TypedResults.Created($"/api/UserData/{userData.Uid}", userData);
+            return TypedResults.Ok();
         })
-        .WithName("CreateUserData")
+        .WithName("CreateUser")
         .WithOpenApi();
 
+        //Delete user
         group.MapDelete("/{id}", async Task<Results<Ok, NotFound>> (string uid, mosaCupBackendServerContext db) =>
         {
             var affected = await db.UserData
                 .Where(model => model.Uid == uid)
-                .ExecuteDeleteAsync();
-
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.DeletedAt, DateTime.UtcNow)
+                    );
             return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
         })
-        .WithName("DeleteUserData")
+        .WithName("DeleteUser")
         .WithOpenApi();
     }
 }

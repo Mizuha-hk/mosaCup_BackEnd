@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OpenApi;
 using mosaCupBackendServer.Data;
 using mosaCupBackendServer.Models.DbModels;
+using mosaCupBackendServer.Models.ReqModels;
+
 namespace mosaCupBackendServer.EndPoints;
 
 public static class FollowEndpoints
@@ -11,57 +13,59 @@ public static class FollowEndpoints
     {
         var group = routes.MapGroup("/api/Follow").WithTags(nameof(Follow));
 
-        group.MapGet("/", async (mosaCupBackendServerContext db) =>
+        //Get following users
+        group.MapGet("/{uid}", async Task<Results<Ok<List<Follow>>, NotFound>> (string uid, mosaCupBackendServerContext db) =>
         {
-            return await db.Follow.ToListAsync();
+            var followUser = await db.Follow
+                .Where(model => model.Uid == uid)
+                .ToListAsync();
+            return followUser != null ? TypedResults.Ok(followUser) : TypedResults.NotFound();
         })
-        .WithName("GetAllFollows")
+        .WithName("GetFollowingUsers")
         .WithOpenApi();
 
-        group.MapGet("/{id}", async Task<Results<Ok<Follow>, NotFound>> (int id, mosaCupBackendServerContext db) =>
+        //Judge Follow or UnFollow(following -> 1/ unfollowing -> 0)
+        group.MapPost("/JudgeFollow", async Task<Results<Ok<int>, NotFound>> (FollowReq reqData, mosaCupBackendServerContext db) =>
         {
-            return await db.Follow.AsNoTracking()
-                .FirstOrDefaultAsync(model => model.Id == id)
-                is Follow model
-                    ? TypedResults.Ok(model)
-                    : TypedResults.NotFound();
+            return await db.Follow
+                .Where(m => m.Uid == reqData.Uid)
+                .FirstOrDefaultAsync(m => m.FollowedUid == reqData.FollowedUid) 
+                    is Follow m
+                    ? TypedResults.Ok(1)
+                    : TypedResults.Ok(0);
         })
-        .WithName("GetFollowById")
+        .WithName("JudgeFollow")
         .WithOpenApi();
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound>> (int id, Follow follow, mosaCupBackendServerContext db) =>
+        //Follow user
+        group.MapPost("/", async (FollowReq reqData, mosaCupBackendServerContext db) =>
         {
-            var affected = await db.Follow
-                .Where(model => model.Id == id)
-                .ExecuteUpdateAsync(setters => setters
-                  .SetProperty(m => m.Id, follow.Id)
-                  .SetProperty(m => m.Uid, follow.Uid)
-                  .SetProperty(m => m.FollowedUid, follow.FollowedUid)
-                );
-
-            return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
-        })
-        .WithName("UpdateFollow")
-        .WithOpenApi();
-
-        group.MapPost("/", async (Follow follow, mosaCupBackendServerContext db) =>
-        {
+            var id = Guid.NewGuid();
+            var follow = new Follow { Id = id, Uid = reqData.Uid, FollowedUid = reqData.FollowedUid };
             db.Follow.Add(follow);
             await db.SaveChangesAsync();
             return TypedResults.Created($"/api/Follow/{follow.Id}",follow);
         })
-        .WithName("CreateFollow")
+        .WithName("FollowUser")
         .WithOpenApi();
 
-        group.MapDelete("/{id}", async Task<Results<Ok, NotFound>> (int id, mosaCupBackendServerContext db) =>
+        //UnFollow user
+        group.MapPost("/Unfollow", async Task<Results<Ok, NotFound>> (FollowReq reqData, mosaCupBackendServerContext db) =>
         {
-            var affected = await db.Follow
-                .Where(model => model.Id == id)
-                .ExecuteDeleteAsync();
+            var follow = await db.Follow
+                .Where(model => model.Uid == reqData.Uid)
+                .FirstOrDefaultAsync(model => model.FollowedUid == reqData.FollowedUid);
+            if(follow == null)
+            {
+                return TypedResults.NotFound();
+            }
 
+            var affected = await db.Follow
+                .Where(model => model.Id == follow.Id)
+                .ExecuteDeleteAsync();
             return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
         })
-        .WithName("DeleteFollow")
+        .WithName("UnFollowUser")
         .WithOpenApi();
     }
 }

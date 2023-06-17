@@ -5,8 +5,10 @@ namespace mosaCupBackendServer.Models.DbModels
     public class Follow
     {
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
+        [Required]
         public string Uid { get; set; }
+        [Required]
         public string FollowedUid { get; set; }
     }
 }

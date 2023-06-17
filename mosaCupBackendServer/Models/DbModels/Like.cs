@@ -5,9 +5,9 @@ namespace mosaCupBackendServer.Models.DbModels
     public class Like
     {
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         [Required]
-        public int PostId { get; set; }
+        public Guid PostId { get; set; }
         [Required]
         public string Uid { get; set; }
     }
