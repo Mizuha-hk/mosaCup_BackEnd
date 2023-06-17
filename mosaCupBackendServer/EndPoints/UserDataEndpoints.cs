@@ -102,5 +102,18 @@ public static class UserDataEndpoints
         })
         .WithName("DeleteUser")
         .WithOpenApi();
+
+        //Restore user
+        group.MapGet("/Restore/{id}", async Task<Results<Ok, NotFound>> (string uid, mosaCupBackendServerContext db) =>
+        {
+            var affected = await db.UserData
+                .Where(model => model.Uid == uid)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.DeletedAt, (DateTime?)null)
+                );
+            return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
+        })
+        .WithName("RestoreName")
+        .WithOpenApi();
     }
 }
