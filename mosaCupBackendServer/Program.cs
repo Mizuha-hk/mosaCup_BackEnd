@@ -2,8 +2,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using mosaCupBackendServer.Data;
 using mosaCupBackendServer.EndPoints;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var keyVaultEndpoint = new Uri(Environment.GetEnvironmentVariable("VaultUri"));
+builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
+
 builder.Services.AddDbContext<mosaCupBackendServerContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("mosaCupBackendServerContext") ?? throw new InvalidOperationException("Connection string 'mosaCupBackendServerContext' not found.")));
 
