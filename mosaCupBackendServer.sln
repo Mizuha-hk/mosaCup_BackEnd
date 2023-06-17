@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.33711.374
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mosaCupBackendServer", "mosaCupBackendServer\mosaCupBackendServer.csproj", "{A147429C-2DEB-4211-B589-E9B3BF0B12BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mosaCupBackendServer", "mosaCupBackendServer\mosaCupBackendServer.csproj", "{A147429C-2DEB-4211-B589-E9B3BF0B12BF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JoyLevelMLModel", "..\JoyLevelMLModel\JoyLevelMLModel\JoyLevelMLModel.csproj", "{92F6BFC1-5366-4BEF-9886-4B1D092B790D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{A147429C-2DEB-4211-B589-E9B3BF0B12BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A147429C-2DEB-4211-B589-E9B3BF0B12BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A147429C-2DEB-4211-B589-E9B3BF0B12BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92F6BFC1-5366-4BEF-9886-4B1D092B790D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92F6BFC1-5366-4BEF-9886-4B1D092B790D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92F6BFC1-5366-4BEF-9886-4B1D092B790D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92F6BFC1-5366-4BEF-9886-4B1D092B790D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
