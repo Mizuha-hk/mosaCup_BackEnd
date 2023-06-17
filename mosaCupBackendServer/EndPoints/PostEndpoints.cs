@@ -5,7 +5,6 @@ using mosaCupBackendServer.Data;
 using mosaCupBackendServer.Models.DbModels;
 using mosaCupBackendServer.Models.ReqModels;
 using System.Collections.Immutable;
-using JoyLevelMLModel;
 
 namespace mosaCupBackendServer.EndPoints;
 
@@ -32,11 +31,11 @@ public static class PostEndpoints
                 Content = reqData.Content,
                 PostedDate = DateTime.UtcNow,
                 ReplyId = reqData.ReplyId,
-                JoyLevel = UseJoyModel.JudgeJoyLevel(reqData.Content)
+                //JoyLevel = UseJoyModel.JudgeJoyLevel(reqData.Content)
             };
             db.Post.Add(post);
             await db.SaveChangesAsync();
-            return Results.Ok(post.JoyLevel);
+            return Results.Ok(0);
         })
         .WithName("CreatePost")
         .WithOpenApi();
