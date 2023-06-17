@@ -15,11 +15,26 @@ public static class PostEndpoints
     {
         var group = routes.MapGroup("/api/Post").WithTags(nameof(Post));
 
+        //get all
         group.MapGet("/", async (mosaCupBackendServerContext db) =>
         {
-            return await db.Post.ToListAsync();
+            return await db.Post
+                .OrderByDescending(m => m.PostedDate)
+                .ToListAsync();
         })
         .WithName("GetAllPosts")
+        .WithOpenApi();
+
+        //get 10 posts
+        group.MapGet("/{page}", async (int page, mosaCupBackendServerContext db) =>
+        {
+            return await db.Post
+                .OrderByDescending (m => m.PostedDate)
+                .Skip(page * 10)
+                .Take(10)
+                .ToListAsync();
+        })
+        .WithName("GetPostsByPage")
         .WithOpenApi();
 
         //add Post / return JoyLevel
