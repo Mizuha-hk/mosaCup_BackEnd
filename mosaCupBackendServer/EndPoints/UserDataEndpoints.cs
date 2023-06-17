@@ -37,8 +37,9 @@ public static class UserDataEndpoints
             }
             else
             {
+                
                 var userList = await db.UserData
-                    .Where(model => model.Name.IndexOf(name) != -1)
+                    .Where(model => model.Name.IndexOf(name.Replace("@","")) != -1)
                     .ToListAsync();
                 return userList != null ? TypedResults.Ok(userList) : TypedResults.NotFound();
             }
@@ -71,8 +72,17 @@ public static class UserDataEndpoints
         .WithOpenApi();
 
         //Create user
-        group.MapPost("/", async (UserData userData, mosaCupBackendServerContext db) =>
+        group.MapPost("/", async (UserDataReq reqData, mosaCupBackendServerContext db) =>
         {
+            var userData = new UserData 
+            {
+                Uid = reqData.Uid,
+                DisplayName = reqData.DisplayName,
+                Name = reqData.Name,
+                Description = reqData.Description,
+                DeletedAt = null
+            };
+
             db.UserData.Add(userData);
             await db.SaveChangesAsync();
             return TypedResults.Ok();
